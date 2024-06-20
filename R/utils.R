@@ -58,7 +58,6 @@ get_default_cache_dir <- function() {
         R_user_dir(
             "cache"
         ) |>
-        file.path(COUNTS_VERSION) |>
         normalizePath() |>
         suppressWarnings()
 }

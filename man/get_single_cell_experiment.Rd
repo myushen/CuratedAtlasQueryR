@@ -7,7 +7,11 @@
 \href{https://www.biorxiv.org/content/10.1101/2023.06.08.542671v3}{Mangiola et al.,2023}
 }
 \usage{
-get_single_cell_experiment(data, ...)
+get_single_cell_experiment(
+  data,
+  cache_directory = get_default_cache_dir(),
+  ...
+)
 }
 \arguments{
 \item{data}{A data frame containing, at minimum, \code{cell_}, \code{file_id_db} columns,

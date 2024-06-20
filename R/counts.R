@@ -20,10 +20,13 @@ COUNTS_URL <- single_line_str(
   "https://object-store.rc.nectar.org.au/v1/
     AUTH_06d6e008e3e642da99d806ba3ea629c5/cellxgene-0.2.1-hdf5"
 )
-#' Current version of the counts. This will be incremented when a newer
+#' Current version of the counts map. This will be incremented when a newer
 #' version is released
 #' @noRd
-COUNTS_VERSION <- "0.2.1"
+COUNTS_VERSION <- c(
+  cellxgene = "0.2.1",
+  pseudobulk = "0.1.0"
+)
 
 #' Base URL pointing to the pseudobulk counts at the current version
 #' @noRd
@@ -65,13 +68,20 @@ get_SingleCellExperiment <- function(...){
 #'   immune system across age, sex and ethnicity." bioRxiv (2023): 2023-06.
 #'   doi:10.1101/2023.06.08.542671.
 #' @source [Mangiola et al.,2023](https://www.biorxiv.org/content/10.1101/2023.06.08.542671v3)
-get_single_cell_experiment <- function(data, ...){
+get_single_cell_experiment <- function(data, 
+                                       cache_directory = get_default_cache_dir(),
+                                       ...){
   raw_data <- collect(data)
   assert_that(
     inherits(raw_data, "tbl"),
     has_name(raw_data, c("cell_", "file_id_db"))
   )
-  get_data_container(data, ..., repository = COUNTS_URL, grouping_column = "file_id_db")
+  versioned_cache_directory <- COUNTS_VERSION["cellxgene"] |> as.character()
+  get_data_container(data, ..., repository = COUNTS_URL, grouping_column = "file_id_db",
+                     cache_directory = file.path(cache_directory,
+                                                 "cellxgene",
+                                                 versioned_cache_directory)
+  )
 }
 
 #' Gets a Pseudobulk from curated metadata
@@ -92,13 +102,20 @@ get_single_cell_experiment <- function(data, ...){
 #'   immune system across age, sex and ethnicity." bioRxiv (2023): 2023-06.
 #'   doi:10.1101/2023.06.08.542671.
 #' @source [Mangiola et al.,2023](https://www.biorxiv.org/content/10.1101/2023.06.08.542671v3)
-get_pseudobulk <- function(data, ...) {
+get_pseudobulk <- function(data, 
+                           cache_directory = get_default_cache_dir(),
+                           ...) {
   raw_data <- collect(data)
   assert_that(
     inherits(raw_data, "tbl"),
     has_name(raw_data, c("cell_", "file_id", "sample_", "cell_type_harmonised"))
   )
-  get_data_container(data, ..., repository = pseudobulk_url, grouping_column = "file_id")
+  versioned_cache_directory <- COUNTS_VERSION["pseudobulk"] |> as.character()
+  get_data_container(data, ..., repository = pseudobulk_url, grouping_column = "file_id",
+                     cache_directory = file.path(cache_directory,
+                                                 "pseudobulk",
+                                                 versioned_cache_directory)
+  )
 }
 
 #' Gets data from curated metadata container

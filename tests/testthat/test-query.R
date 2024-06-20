@@ -19,7 +19,7 @@ test_that("get_default_cache_dir() returns the correct directory on Linux", {
     grepl("linux", version$platform, fixed = TRUE) |>
         skip_if_not()
 
-    "~/.cache/R/CuratedAtlasQueryR/0.2.1" |>
+    "~/.cache/R/CuratedAtlasQueryR/" |>
         normalizePath() |>
         expect_equal(
             get_default_cache_dir(),
@@ -121,9 +121,11 @@ test_that("get_seurat() returns the appropriate data in Seurat format", {
     )
 })
 
-test_that("get_SingleCellExperiment() assigns the right cell ID to each cell", {
+test_that("get_SingleCellExperiment() assigns the right cell ID to each cell in a cellxgene version", {
     id = "3214d8f8986c1e33a85be5322f2db4a9"
     file_id = "7eb6d9a1-a723-4d59-bdbc-03e0a263e836"
+    data_container = "cellxgene"
+    version = "0.2.1"
     
     # Force the file to be cached
     get_metadata() |>
@@ -132,7 +134,7 @@ test_that("get_SingleCellExperiment() assigns the right cell ID to each cell", {
     
     # Load the SCE from cache directly
     assay_1 = CuratedAtlasQueryR:::get_default_cache_dir() |>
-        file.path("original", id) |>
+        file.path(data_container, version, "original", id) |>
         HDF5Array::loadHDF5SummarizedExperiment() |>
         assay("X") |>
         as.matrix()

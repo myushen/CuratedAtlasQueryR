@@ -7,7 +7,7 @@
 \href{https://www.biorxiv.org/content/10.1101/2023.06.08.542671v3}{Mangiola et al.,2023}
 }
 \usage{
-get_pseudobulk(data, ...)
+get_pseudobulk(data, cache_directory = get_default_cache_dir(), ...)
 }
 \arguments{
 \item{data}{A data frame containing, at minimum, \code{cell_}, \code{file_id},
