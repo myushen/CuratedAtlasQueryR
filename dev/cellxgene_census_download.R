@@ -77,7 +77,8 @@ get_census_data <- function(df,
     } else if (data_output_type == "anndata") {
       file_path <- file.path(save_path, paste(args$filename, ".h5ad", sep = ""))
       #file_path <- file.path(save_path, glue("{args$filename}.h5ad"))
-      zellkonverter::writeH5AD(data, file = file_path)
+      # enable gzip option for storage optimisation
+      zellkonverter::writeH5AD(data, file = file_path, compression = "gzip")
       
     }
   })
