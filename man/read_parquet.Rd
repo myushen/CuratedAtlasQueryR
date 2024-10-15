@@ -4,7 +4,11 @@
 \alias{read_parquet}
 \title{Returns a tibble from a parquet file path}
 \usage{
-read_parquet(conn, path)
+read_parquet(conn, path, filename_column = FALSE)
+}
+\arguments{
+\item{filename_column}{A column name to the metadata that indicates which row came from which file.
+By default it does not add the column.}
 }
 \value{
 An SQL data frame

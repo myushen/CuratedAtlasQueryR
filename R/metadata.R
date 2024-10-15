@@ -155,6 +155,8 @@ SAMPLE_DATABASE_URL <- single_line_str(
 #' get_metadata(cache_directory = path.expand('~'))
 #' ```
 #' 
+#' @inheritDotParams read_parquet
+#' 
 #' @references Mangiola, S., M. Milton, N. Ranathunga, C. S. N. Li-Wai-Suen, 
 #'   A. Odainic, E. Yang, W. Hutchison et al. "A multi-organ map of the human 
 #'   immune system across age, sex and ethnicity." bioRxiv (2023): 2023-06.
@@ -163,7 +165,8 @@ SAMPLE_DATABASE_URL <- single_line_str(
 get_metadata <- function(
     remote_url = get_database_url(),
     cache_directory = get_default_cache_dir(),
-    use_cache = TRUE
+    use_cache = TRUE,
+    ...
 ) {
   # Synchronize remote files
   walk(remote_url, function(url) {
@@ -190,7 +193,7 @@ get_metadata <- function(
   else {
     table <- duckdb() |>
       dbConnect(drv = _, read_only = TRUE) |>
-      read_parquet(path = all_parquet)
+      read_parquet(path = all_parquet, ...)
     cache$metadata_table[[hash]] <- table
     table
   }

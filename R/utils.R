@@ -103,15 +103,36 @@ sync_remote_file <- function(full_url, output_file, ...) {
 #' Since dbplyr 2.4.0, raw file paths aren't handled very well
 #' See: <https://github.com/duckdb/duckdb-r/issues/38>
 #' Hence the need for this method
+#' @param filename_column A column name to the metadata that indicates which row came from which file. 
+#' By default it does not add the column.
 #' @importFrom glue glue
 #' @importFrom dplyr tbl
 #' @importFrom dbplyr sql
 #' @importFrom glue glue_sql
 #' @return An SQL data frame
 #' @keywords internal
-read_parquet <- function(conn, path){
-    from_clause <- glue_sql("FROM read_parquet([{`path`*}], union_by_name=true)", .con=conn) |> sql()
+read_parquet <- function(conn, path, filename_column=FALSE){
+    from_clause <- glue_sql("FROM read_parquet([{`path`*}], union_by_name=true, filename={filename_column})", .con=conn) |> sql()
     tbl(conn, from_clause)
 }
 
+
+#' Deletes specific counts and metadata from cache
+#' @importFrom purrr map
+#' @importFrom dplyr filter distinct pull collect
+#' @return `NULL`, invisibly
+#' @keywords internal
+delete_counts <- function(data, assay = c("original","cpm"), cache_directory = get_default_cache_dir()){
+  data <- collect(data)
+  ids <- data |> distinct(file_id_db) |> pull(file_id_db)
+  counts_path <- file.path(cache_directory, assay, ids)
+  # counts
+  map(counts_path, ~ .x |> unlink(recursive = TRUE))
+  
+  # metadata
+  filename <- get_metadata(cache_directory = cache_directory, filename_column = "meta_filename", use_cache = FALSE ) |> 
+    filter(file_id_db %in% ids) |> distinct(meta_filename) |> pull(meta_filename)
+  arrow::read_parquet(filename) |> filter(!file_id_db %in% ids) |>
+    arrow::write_parquet(filename)
+}
 
