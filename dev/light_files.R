@@ -108,7 +108,7 @@ library(HDF5Array)
 # 												 	))  |>
 # 	pull(commands) |>
 # 	unlist() |>
-# 	write_lines(glue("~/PostDoc/CuratedAtlasQueryR/dev/light_files.makeflow"))
+# 	write_lines(glue("~/PostDoc/cellNexus/dev/light_files.makeflow"))
 
 
 

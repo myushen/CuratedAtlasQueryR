@@ -45,7 +45,7 @@ metadata. The data for which the column \code{organism_name} included "Homo
 sapiens" was collected collected from \code{cellxgenedp}.
 
 The columns \code{dataset_id} and \code{file_id} link the datasets explorable through
-\code{CuratedAtlasQueryR} and \code{cellxgenedp}to the CELLxGENE portal.
+\code{cellNexus} and \code{cellxgenedp}to the CELLxGENE portal.
 
 Our representation, harmonises the metadata at dataset, sample and cell
 levels, in a unique coherent database table.

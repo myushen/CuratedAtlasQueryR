@@ -12,7 +12,7 @@ library(DelayedArray)
 library(HDF5Array)
 library(openssl)
 library(stringr)
-library(CuratedAtlasQueryR)
+library(cellNexus)
 library(purrr)
 
 library(dbplyr)
@@ -32,7 +32,7 @@ root_directory = "/vast/projects/cellxgene_curated"
 # library(tidyverse)
 # library(purrr)
 # library(glue)
-# library(CuratedAtlasQueryR)
+# library(cellNexus)
 # library(HDF5Array)
 # 
 
@@ -133,7 +133,7 @@ root_directory = "/vast/projects/cellxgene_curated"
 # 	))  |>
 # 	pull(commands) |>
 # 	unlist() |>
-# 	write_lines(glue("~/PostDoc/CuratedAtlasQueryR/dev/DB2_files.makeflow"))
+# 	write_lines(glue("~/PostDoc/cellNexus/dev/DB2_files.makeflow"))
 
 
 

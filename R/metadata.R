@@ -91,7 +91,7 @@ SAMPLE_DATABASE_URL <- single_line_str(
 #' sapiens" was collected collected from `cellxgenedp`.
 #'
 #' The columns `dataset_id` and `file_id` link the datasets explorable through
-#' `CuratedAtlasQueryR` and `cellxgenedp`to the CELLxGENE portal.
+#' `cellNexus` and `cellxgenedp`to the CELLxGENE portal.
 #'
 #' Our representation, harmonises the metadata at dataset, sample and cell
 #' levels, in a unique coherent database table.

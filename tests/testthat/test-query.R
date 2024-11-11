@@ -19,7 +19,7 @@ test_that("get_default_cache_dir() returns the correct directory on Linux", {
     grepl("linux", version$platform, fixed = TRUE) |>
         skip_if_not()
 
-    "~/.cache/R/CuratedAtlasQueryR/0.2.1" |>
+    "~/.cache/R/cellNexus/0.2.1" |>
         normalizePath() |>
         expect_equal(
             get_default_cache_dir(),
@@ -131,7 +131,7 @@ test_that("get_SingleCellExperiment() assigns the right cell ID to each cell", {
         get_SingleCellExperiment()
     
     # Load the SCE from cache directly
-    assay_1 = CuratedAtlasQueryR:::get_default_cache_dir() |>
+    assay_1 = cellNexus:::get_default_cache_dir() |>
         file.path("original", id) |>
         HDF5Array::loadHDF5SummarizedExperiment() |>
         assay("X") |>

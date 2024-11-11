@@ -31,12 +31,12 @@ clean_cell_types = function(.x){
 }
 
 metadata_file = "/vast/projects/cellxgene_curated//metadata_0.2.rds"
-file_curated_annotation_merged = "~/PostDoc/CuratedAtlasQueryR/dev/cell_type_curated_annotation_0.2.3.rds"
+file_curated_annotation_merged = "~/PostDoc/cellNexus/dev/cell_type_curated_annotation_0.2.3.rds"
 file_metadata_annotated = "/vast/projects/cellxgene_curated/metadata_annotated_0.2.3.rds"
 annotation_directory = "/vast/projects/cellxgene_curated//annotated_data_0.2/"
 
 # metadata_file = "/vast/projects/cellxgene_curated//metadata.rds"
-# file_curated_annotation_merged = "~/PostDoc/CuratedAtlasQueryR/dev/cell_type_curated_annotation.rds"
+# file_curated_annotation_merged = "~/PostDoc/cellNexus/dev/cell_type_curated_annotation.rds"
 # file_metadata_annotated = "/vast/projects/cellxgene_curated//metadata_annotated.rds"
 # annotation_directory = "/vast/projects/cellxgene_curated//annotated_data_0.1/"
 
@@ -79,7 +79,7 @@ annotation_harmonised =
 
 
 job::job({
-	annotation_harmonised |>  saveRDS("~/PostDoc/CuratedAtlasQueryR/dev/annotated_data_0.2_temp_table.rds")
+	annotation_harmonised |>  saveRDS("~/PostDoc/cellNexus/dev/annotated_data_0.2_temp_table.rds")
 })
 
 clean_cell_types_deeper = function(x){
@@ -133,9 +133,9 @@ clean_cell_types_deeper = function(x){
 }
 
 
-# annotation_harmonised = readRDS("~/PostDoc/CuratedAtlasQueryR/dev/annotated_data_0.2_temp_table.rds")
+# annotation_harmonised = readRDS("~/PostDoc/cellNexus/dev/annotated_data_0.2_temp_table.rds")
 
-# library(CuratedAtlasQueryR)
+# library(cellNexus)
 metadata_df = readRDS(metadata_file)
 
 # Integrate with metadata
@@ -144,7 +144,7 @@ annotation =
 	metadata_df |>
 	select(.cell, cell_type, file_id, .sample) |>
 	as_tibble() |>
-	left_join(read_csv("~/PostDoc/CuratedAtlasQueryR/dev/metadata_cell_type.csv"),  by = "cell_type") |>
+	left_join(read_csv("~/PostDoc/cellNexus/dev/metadata_cell_type.csv"),  by = "cell_type") |>
 	left_join(annotation_harmonised, by = c(".cell", ".sample")) |>
 
 	# Clen cell types
@@ -154,11 +154,11 @@ annotation =
 # 	filter(lineage_1=="immune") |>
 # 	count(cell_type, predicted.celltype.l2, blueprint_singler, strong_evidence) |>
 # 	arrange(!strong_evidence, desc(n)) |>
-# 	write_csv("~/PostDoc/CuratedAtlasQueryR/dev/annotation_confirm.csv")
+# 	write_csv("~/PostDoc/cellNexus/dev/annotation_confirm.csv")
 
 
 annotation_crated_confirmed =
-	read_csv("~/PostDoc/CuratedAtlasQueryR/dev/annotation_confirm_manually_curated.csv") |>
+	read_csv("~/PostDoc/cellNexus/dev/annotation_confirm_manually_curated.csv") |>
 
 	# TEMPORARY
 	rename(cell_type_clean = cell_type) |>
@@ -184,7 +184,7 @@ blueprint_definitely_non_immune = c(   "astrocytes" , "chondrocytes"  , "endothe
 annotation_crated_UNconfirmed =
 
 	# Read
-	read_csv("~/PostDoc/CuratedAtlasQueryR/dev/annotation_confirm_manually_curated.csv") |>
+	read_csv("~/PostDoc/cellNexus/dev/annotation_confirm_manually_curated.csv") |>
 
 	# TEMPORARY
 	rename(cell_type_clean = cell_type) |>
@@ -573,7 +573,7 @@ curated_annotation =
 curated_annotation =
 	curated_annotation |>
 	left_join(
-		read_csv("~/PostDoc/CuratedAtlasQueryR/dev/curated_annotation_still_unannotated_0.2_manually_labelled.csv") |>
+		read_csv("~/PostDoc/cellNexus/dev/curated_annotation_still_unannotated_0.2_manually_labelled.csv") |>
 			select(cell_type, cell_type_harmonised_manually_curated = cell_type_harmonised, confidence_class_manually_curated = confidence_class, everything()),
 		by = join_by(cell_type, cell_annotation_azimuth_l2, cell_annotation_blueprint_singler, cell_annotation_monaco_singler)
 	) |>
@@ -599,7 +599,7 @@ curated_annotation =
 curated_annotation =
 	curated_annotation |>
 	left_join(
-		read_csv("~/PostDoc/CuratedAtlasQueryR/dev/curated_annotation_still_unannotated_0.2_confidence_class_4_manually_labelled.csv") |>
+		read_csv("~/PostDoc/cellNexus/dev/curated_annotation_still_unannotated_0.2_confidence_class_4_manually_labelled.csv") |>
 			select(confidence_class_manually_curated = confidence_class, everything()),
 		by = join_by(cell_type, cell_type_harmonised, cell_annotation_azimuth_l2, cell_annotation_blueprint_singler, cell_annotation_monaco_singler)
 	) |>

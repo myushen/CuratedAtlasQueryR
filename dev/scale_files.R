@@ -28,7 +28,7 @@ library(glmGamPoi)
 # ) |>
 # 	prepend(glue("CATEGORY=scale_data\nMEMORY=10000\nCORES=2\nWALL_TIME=30000")) |>
 # 	unlist()  |>
-# 	write_lines(glue("~/PostDoc/CuratedAtlasQueryR/dev/scale_files.makeflow"))
+# 	write_lines(glue("~/PostDoc/cellNexus/dev/scale_files.makeflow"))
 
 
 

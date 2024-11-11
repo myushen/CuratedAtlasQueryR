@@ -25,7 +25,7 @@ tar_script(
     #-----------------------#
     tar_option_set(
       packages = c(
-        "CuratedAtlasQueryR", "stringr", "tibble", "tidySingleCellExperiment", "dplyr", "Matrix",
+        "cellNexus", "stringr", "tibble", "tidySingleCellExperiment", "dplyr", "Matrix",
         "Seurat", "glue", "qs",  "purrr", "tidybulk", "tidySummarizedExperiment", "edgeR", "crew", "magrittr", "digest", "glmmSeq", "readr", "forcats"
       ),
       

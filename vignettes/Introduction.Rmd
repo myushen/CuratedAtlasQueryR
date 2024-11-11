@@ -1,10 +1,10 @@
 ---
-title: "CuratedAtlasQueryR"
+title: "cellNexus"
 output: "html_vignette"
 params:
   demo_metadata: true
 vignette: >
-  %\VignetteIndexEntry{CuratedAtlasQueryR}
+  %\VignetteIndexEntry{cellNexus}
   %\VignetteEncoding{UTF-8}
   %\VignetteEngine{knitr::rmarkdown}
 knit: >
@@ -50,8 +50,8 @@ find_figure <- function(names){
         file.path("man", "figures", names) 
 }
 METADATA_URL = if (params$demo_metadata)
-       CuratedAtlasQueryR::SAMPLE_DATABASE_URL else
-       CuratedAtlasQueryR::get_database_url
+       cellNexus::SAMPLE_DATABASE_URL else
+       cellNexus::get_database_url
 
 ```
 
@@ -86,13 +86,13 @@ c(
 ## Installation
 
 ```{r, eval=FALSE}
-devtools::install_github("stemangiola/CuratedAtlasQueryR")
+devtools::install_github("MangiolaLaboratory/cellNexus")
 ```
 
 ## Load the package
 
 ```{r, message=FALSE, warning=FALSE}
-library(CuratedAtlasQueryR)
+library(cellNexus)
 ```
 
 ## Load and explore the metadata

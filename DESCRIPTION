@@ -1,5 +1,5 @@
 Type: Package
-Package: CuratedAtlasQueryR
+Package: cellNexus
 Title: Queries the Human Cell Atlas
 Version: 1.4.7
 Authors@R: c(
@@ -128,8 +128,8 @@ biocViews:
 Encoding: UTF-8
 RoxygenNote: 7.3.2
 LazyDataCompression: xz
-URL: https://github.com/stemangiola/CuratedAtlasQueryR
-BugReports: https://github.com/stemangiola/CuratedAtlasQueryR/issues
+URL: https://github.com/MangiolaLaboratory/cellNexus
+BugReports: https://github.com/MangiolaLaboratory/cellNexus/issues
 VignetteBuilder: knitr
 Roxygen: list(markdown = TRUE)
 Collate: 

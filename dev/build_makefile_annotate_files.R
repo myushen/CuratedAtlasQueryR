@@ -127,7 +127,7 @@ metadata_df |>
 	))  |>
 	pull(commands) |>
 	unlist() |>
-	write_lines(glue("~/PostDoc/CuratedAtlasQueryR/dev/annotate_files.makeflow"))
+	write_lines(glue("~/PostDoc/cellNexus/dev/annotate_files.makeflow"))
 
 
 

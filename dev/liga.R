@@ -1,6 +1,6 @@
 library(tidyverse)
 library(glue)
-library(CuratedAtlasQueryR)
+library(cellNexus)
 library(brms)
 library(MASS)
 library(magrittr)
@@ -25,7 +25,7 @@ library(brms)
 # x = x |>
 # 	bind_cols(x |> pull(sample))
 #
-# x |> saveRDS("~/PostDoc/CuratedAtlasQueryR/dev/ligand_receptor_count_all_0.2.1.rds")
+# x |> saveRDS("~/PostDoc/cellNexus/dev/ligand_receptor_count_all_0.2.1.rds")
 #
 # rm(x)
 # gc()
@@ -84,7 +84,7 @@ metadata_df =
 
 
 cdc_weight_data =
-	readRDS("~/PostDoc/CuratedAtlasQueryR/dev/ligand_receptor_count_all_0.2.1.rds") |>
+	readRDS("~/PostDoc/cellNexus/dev/ligand_receptor_count_all_0.2.1.rds") |>
 	dplyr::select(DB, sample, cell_cell_weight) |>
 	unnest(cell_cell_weight) |>
 
@@ -216,14 +216,14 @@ job::job({
 		filter(!cell_from %in% c("immune", "non")) |>
 
 
-		saveRDS("~/PostDoc/CuratedAtlasQueryR/dev/sccomp_on_HCA_0.2.1/cdc_weight_fit_random_effect_file_broad_cells.rds")
+		saveRDS("~/PostDoc/cellNexus/dev/sccomp_on_HCA_0.2.1/cdc_weight_fit_random_effect_file_broad_cells.rds")
 
 })
 
 #cdc_weight_fit |> saveRDS("cdc_weight_fit_random_effect_assay.rds")
 
 weight_broad_cells = 
-  readRDS("~/PostDoc/CuratedAtlasQueryR/dev/sccomp_on_HCA_0.2.1/cdc_weight_fit_random_effect_file_broad_cells.rds") 
+  readRDS("~/PostDoc/cellNexus/dev/sccomp_on_HCA_0.2.1/cdc_weight_fit_random_effect_file_broad_cells.rds") 
 
 weight_broad_cells |>
 	filter((`l-95% CI` * `u-95% CI`)>0) |>
@@ -411,7 +411,7 @@ names(cell_type_color) = names(cell_type_color) |>  str_replace("macrophage", "m
 
 
 weight_data_per_gene =
-  readRDS("~/PostDoc/CuratedAtlasQueryR/dev/ligand_receptor_count_all_0.2.1.rds") |>
+  readRDS("~/PostDoc/cellNexus/dev/ligand_receptor_count_all_0.2.1.rds") |>
   dplyr::select(DB, sample, cell_vs_all_cells_per_pathway) |>
   unnest(cell_vs_all_cells_per_pathway) |>
   
@@ -552,13 +552,13 @@ job::job({
     )) |>
     
     select(-fit) |> 
-    saveRDS("~/PostDoc/CuratedAtlasQueryR/dev/sccomp_on_HCA_0.2.1/cdc_gene_fit_random_intercept_file_resolved_cells_with_probability.rds")
+    saveRDS("~/PostDoc/cellNexus/dev/sccomp_on_HCA_0.2.1/cdc_gene_fit_random_intercept_file_resolved_cells_with_probability.rds")
   
 })
 
 
 cdc_weight_fit = 
-  readRDS("~/PostDoc/CuratedAtlasQueryR/dev/sccomp_on_HCA_0.2.1/cdc_gene_fit_random_intercept_file_resolved_cells_with_probability.rds") 
+  readRDS("~/PostDoc/cellNexus/dev/sccomp_on_HCA_0.2.1/cdc_gene_fit_random_intercept_file_resolved_cells_with_probability.rds") 
 
 # cdc_weight_fit |>
 #   unnest(estimate_95) |> 
@@ -777,7 +777,7 @@ lines_cell_type_communication =
 
 
 		# plot_trends =
-		# 	readRDS("~/PostDoc/CuratedAtlasQueryR/dev/cdc_gene_fit_random_intercept_file_resolved_cells.rds") |>
+		# 	readRDS("~/PostDoc/cellNexus/dev/cdc_gene_fit_random_intercept_file_resolved_cells.rds") |>
 		# 	filter((`l-95% CI` * `u-95% CI`)>0) |>
 		# 	#filter(cell_from == "cdc") |>
 		# 	#filter(cell_to |> str_detect("cd8|cd4|b |ilc")) |>
@@ -800,7 +800,7 @@ lines_cell_type_communication =
 
 
 		cdc_weight_data_per_gene_AND_cell =
-		  readRDS("~/PostDoc/CuratedAtlasQueryR/dev/ligand_receptor_count_all_0.2.1.rds") |>
+		  readRDS("~/PostDoc/cellNexus/dev/ligand_receptor_count_all_0.2.1.rds") |>
 			dplyr::select(DB, sample, cell_vs_cell_per_pathway) |>
 			unnest(cell_vs_cell_per_pathway) |>
 			filter(map_int(result, length)>0) |>
@@ -959,7 +959,7 @@ lines_cell_type_communication =
 
 		})
 
-		readRDS("~/PostDoc/CuratedAtlasQueryR/dev/cdc_gene_AND_cell_fit_random_intercept_file_resolved_cells.rds")  |>
+		readRDS("~/PostDoc/cellNexus/dev/cdc_gene_AND_cell_fit_random_intercept_file_resolved_cells.rds")  |>
 			filter((`l-95% CI` * `u-95% CI`)>0) |>
 			print(n=99)
 

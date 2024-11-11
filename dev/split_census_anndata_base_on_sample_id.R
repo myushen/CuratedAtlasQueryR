@@ -127,7 +127,7 @@ list(
 )
 
 # tar_make(store = "~/scratch/Census_rerun/split_h5ad_based_on_sample_id_target_store/",
-#          script = "~/git_control/CuratedAtlasQueryR/dev/split_census_anndata_base_on_sample_id.R",
+#          script = "~/git_control/cellNexus/dev/split_census_anndata_base_on_sample_id.R",
 #          reporter = "summary")
 
 

@@ -8,7 +8,7 @@ library(stringr)
 library(HPCell)
 library(crew.cluster)
 library(arrow)
-library(CuratedAtlasQueryR)
+library(cellNexus)
 directory = "/vast/scratch/users/shen.m/Census_rerun/split_h5ad_based_on_sample_id/"
 sample_anndata <- dir(glue("{directory}"), full.names = T)
 downloaded_samples_tbl <- read_parquet("/vast/scratch/users/shen.m/Census_rerun/census_samples_to_download_groups.parquet")

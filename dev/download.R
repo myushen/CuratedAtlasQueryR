@@ -23,7 +23,7 @@ tar_script(
     #-----------------------#
     tar_option_set(
       packages = c(
-        "zellkonverter", "cellxgenedp", "CuratedAtlasQueryR", "stringr", "tibble", "tidySingleCellExperiment", "dplyr", "Matrix",
+        "zellkonverter", "cellxgenedp", "cellNexus", "stringr", "tibble", "tidySingleCellExperiment", "dplyr", "Matrix",
         "glue", "qs",  "purrr", "tidybulk", "tidySummarizedExperiment",  "crew", "magrittr", "digest", "readr", "forcats"
       ),
       

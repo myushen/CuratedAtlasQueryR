@@ -53,7 +53,7 @@ library(openssl)
 # 	glue("CATEGORY=merge_metadata\nMEMORY=80024\nCORES=1\nWALL_TIME=10000"),
 # 	glue("{metadata_path}:{paste(output_files_path, collapse = \" \")} {files_metadata}\n{tab}Rscript merge_metadata.R {paste(output_files_path, collapse = \" \")} {files_metadata} {metadata_path}")
 # )  |>
-# 	write_lines(glue("~/PostDoc/CuratedAtlasQueryR/dev/get_metadata.makeflow"))
+# 	write_lines(glue("~/PostDoc/cellNexus/dev/get_metadata.makeflow"))
 
 source("utility.R")
 

@@ -1,4 +1,4 @@
 library(testthat)
-library(CuratedAtlasQueryR)
+library(cellNexus)
 
-test_check("CuratedAtlasQueryR")
+test_check("cellNexus")

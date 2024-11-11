@@ -16,7 +16,7 @@ library(celldex)
 library(SingleR)
 library(glmGamPoi)
 source("utility.R")
-library(CuratedAtlasQueryR)
+library(cellNexus)
 library(BiocParallel)
 library(scuttle)
 

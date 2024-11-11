@@ -26,7 +26,7 @@ data_tbl =
   data_tbl |> 
   left_join(annotation_consensus, copy = TRUE)
 
-output_parquet <- "/vast/projects/mangiola_immune_map/PostDoc/CuratedAtlasQueryR/dev/consensus_output.parquet"
+output_parquet <- "/vast/projects/mangiola_immune_map/PostDoc/cellNexus/dev/consensus_output.parquet"
 
 con_write <- dbConnect(duckdb::duckdb(), dbdir = ":memory:")
 

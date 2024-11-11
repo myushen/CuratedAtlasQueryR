@@ -34,7 +34,7 @@ Update the metadata database in nectar using a newly created data frame
 }
 \examples{
 \dontrun{
- metadata = CuratedAtlasQueryR::get_metadata() |>
+ metadata = cellNexus::get_metadata() |>
      head(10) |>
      dplyr::collect()
  update_database(

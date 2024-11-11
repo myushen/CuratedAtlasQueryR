@@ -32,7 +32,7 @@ sample_to_cell_primary_human <- sample_to_cell_primary |>
          sex, self_reported_ethnicity, disease, cell_type)
 
 # accepted_assays from census 
-accepted_assays <- read.csv("~/projects/CuratedAtlasQueryR/cellxgene-to-census/census_accepted_assays.csv", header=TRUE)
+accepted_assays <- read.csv("~/projects/cellNexus/cellxgene-to-census/census_accepted_assays.csv", header=TRUE)
 sample_to_cell_primary_human_accepted_assay <- sample_to_cell_primary_human |> filter(assay %in% accepted_assays$assay)
 
 large_samples <- sample_to_cell_primary_human_accepted_assay |> 

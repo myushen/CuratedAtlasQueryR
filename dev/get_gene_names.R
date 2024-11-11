@@ -3,7 +3,7 @@ library(SingleCellExperiment)
 library(tidyverse)
 library(purrr)
 library(glue)
-library(CuratedAtlasQueryR)
+library(cellNexus)
 library(HDF5Array)
 
 library(dbplyr)

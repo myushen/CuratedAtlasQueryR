@@ -10,7 +10,7 @@ library(scMerge)
 library(glue)
 library(DelayedArray)
 library(HDF5Array)
-# library(CuratedAtlasQueryR)
+# library(cellNexus)
 library(openssl)
 
 
