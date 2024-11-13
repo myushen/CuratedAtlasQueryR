@@ -7,22 +7,26 @@ library("AnnotationDbi")
 library("org.Hs.eg.db")
 
 # Define the path for the anndata directory (run original and cpm separatly)
-input_directory = "/vast/scratch/users/shen.m/cellNexus/cpm_hdf5"
-output_directory = "/vast/scratch/users/shen.m/cellNexus/cpm_anndata"
+input_directory = "/vast/scratch/users/shen.m/cellNexus/original_hdf5"
+output_directory = "/vast/scratch/users/shen.m/cellNexus/original"
 
-# test-pipeline
-# input_directory = "/vast/scratch/users/shen.m/Census_rerun/cellNexus/original/"
-# output_directory = "/vast/scratch/users/shen.m/Census_rerun/cellNexus/anndata/"
+# Define pipeline store
+store = "/vast/scratch/users/shen.m/cellNexus/"
 
 # Create the output directory if it does not exist
 if (!dir.exists(output_directory))  dir.create(output_directory, recursive = TRUE)
 
+# Use Slurm resources
 computing_resources = crew.cluster::crew_controller_slurm(
   slurm_memory_gigabytes_per_cpu = 20, 
   slurm_cpus_per_task = 1,
   workers = 100,
   verbose = TRUE
 )
+
+# (Alternative resources) 
+# computing_resources = crew_controller_local(workers = 10)
+
 tar_option_set(
   memory = "transient",
   garbage_collection = TRUE,
@@ -86,12 +90,31 @@ list(
     ),
     tar_target(
       save_hdf5_to_anndata,
-      convert_gene_to_ensembl_hdf5 |> zellkonverter::writeH5AD(conversion_tbl$anndata, compression = "gzip"),
+      
+      {
+        tryCatch({
+          convert_gene_to_ensembl_hdf5 |> 
+            zellkonverter::writeH5AD(conversion_tbl$anndata,
+                                     compression = "gzip")
+        }, error = function(e) {
+          # Remove cell dimension, keeping gene info. This avoids sce with one cell breaking the conversion
+          convert_gene_to_ensembl_hdf5 <- convert_gene_to_ensembl_hdf5[,0]
+          # Convert to anndata
+          convert_gene_to_ensembl_hdf5 |> zellkonverter::writeH5AD(conversion_tbl$anndata,
+                                           compression = "gzip")
+          
+        })
+        
+      },
+      #convert_gene_to_ensembl_hdf5 |> zellkonverter::writeH5AD(conversion_tbl$anndata, compression = "gzip"),
       pattern = map(convert_gene_to_ensembl_hdf5, conversion_tbl),
       iteration = "list"
     )
   )
 
-
+# Run pipeline
 # tar_make(script = "~/git_control/CuratedAtlasQueryR/dev/convert_fibrosis_and_prostate_hdf5_to_anndata_targets.R",
-#          store = "~/scratch/cellNexus/")
+#          store = store)
+
+# (Optional) To invalidate the pipeline
+# tar_invalidate(names = everything(), store = store)
