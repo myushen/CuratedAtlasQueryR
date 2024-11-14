@@ -8,13 +8,13 @@
 }
 \usage{
 get_database_url(
-  databases = c("metadata.0.2.3.parquet", "fibrosis.0.2.3.parquet",
-    "prostate.0.1.0.parquet")
+  databases = c("metadata.1.0.0.parquet", "fibrosis.1.0.0.parquet",
+    "prostate.1.0.0.parquet")
 )
 }
 \arguments{
 \item{databases}{A character vector specifying the names of the metadata files.
-Default is c("metadata.0.2.3.parquet", "fibrosis.0.2.3.parquet", "prostate.0.1.0.parquet")}
+Default is c("metadata.1.0.0.parquet", "fibrosis.1.0.0.parquet", "prostate.1.0.0.parquet")}
 }
 \value{
 A character vector of URLs to parquet files to download
@@ -23,7 +23,7 @@ A character vector of URLs to parquet files to download
 Returns the URLs for all metadata files
 }
 \examples{
-get_database_url("metadata.0.2.3.parquet")
+get_database_url("metadata.1.0.0.parquet")
 }
 \references{
 Mangiola, S., M. Milton, N. Ranathunga, C. S. N. Li-Wai-Suen,

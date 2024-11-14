@@ -61,9 +61,9 @@ result_tbl |>
 
 # Demonstrate loading metadata from cache and retrieving specific columns
 get_metadata(cache_directory = "/vast/projects/cellxgene_curated/",
-             remote_url = get_database_url("metadata.0.2.3.parquet")) |> 
+             remote_url = get_database_url("metadata.1.0.0.parquet")) |> 
   select(cell_, file_id_cellNexus) |>
   head(1000) |>
   get_data_container(repository = NULL,
-                     cache_directory = "/vast/projects/cellxgene_curated/cellxgene_temp/29_10_2024/", 
+                     cache_directory = "/vast/projects/cellxgene_curated/cellxgene/29_10_2024/", 
                      grouping_column = "file_id_cellNexus")

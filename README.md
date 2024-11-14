@@ -47,7 +47,7 @@ library(cellNexus)
 # Note: in real applications you should use the default value of remote_url 
 metadata <- get_metadata(remote_url = METADATA_URL)
 metadata
-#> # Source:   table</vast/scratch/users/milton.m/cache/R/cellNexus/metadata.0.2.3.parquet> [?? x 56]
+#> # Source:   table</vast/scratch/users/milton.m/cache/R/cellNexus/metadata.1.0.0.parquet> [?? x 56]
 #> # Database: DuckDB 0.7.1 [unknown@Linux 3.10.0-1160.88.1.el7.x86_64:R 4.2.1/:memory:]
 #>    cell_ sample_ cell_…¹ cell_…² confi…³ cell_…⁴ cell_…⁵ cell_…⁶ sampl…⁷ _samp…⁸
 #>    <chr> <chr>   <chr>   <chr>     <dbl> <chr>   <chr>   <chr>   <chr>   <chr>  
