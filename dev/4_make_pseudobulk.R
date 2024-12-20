@@ -7,11 +7,11 @@ library(dplyr)
 library(duckdb)
 # Get input
 
-result_directory = "/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_3"
+result_directory = "/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_4"
 
 tar_script({
   
-  result_directory = "/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_3"
+  result_directory = "/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_4"
   
   
   #-----------------------#
@@ -126,12 +126,7 @@ tar_script({
         verbose = T, 
         seconds_idle = 30
       )
-    ),
-    debug = "metadata_grouped_pseudobulk_processed_split_1",
-    
-    resources = tar_resources(crew = tar_resources_crew("slurm_1_20")) 
-    #, # Set the target you want to debug.
-    #
+    )
   )
   
   split_metadata = function(metadata_parquet){
@@ -226,7 +221,7 @@ tar_script({
             )
           colnames(pseudobulk) = paste0(colData(pseudobulk)$sample_id, "___", colData(pseudobulk)$cell_type_unified_ensemble)
           
-          pseudobulk = pseudobulk |> select(.cell, sample_id, file_id_cellNexus_single_cell, cell_type_unified_ensemble)
+          pseudobulk = pseudobulk |> select(.cell, sample_id, file_id_cellNexus_single_cell, cell_type_unified_ensemble, ncells)
           
           # Decrease size
           # We will reattach rowames later
@@ -398,24 +393,25 @@ tar_script({
     )
     
     # Save the processed SummarizedExperiment to an external file
-    HDF5Array::saveHDF5SummarizedExperiment(
+    se = HDF5Array::saveHDF5SummarizedExperiment(
       processed_se,
       paste0(external_directory, "/", str_remove(se_id, "\\.h5ad")),
       as.sparse = TRUE,
       replace = TRUE
     )
     
-    
+    se
   }
   
   #-----------------------#
   # Pipeline
   #-----------------------#
   list(
-    tar_target(cache.path, "/vast/scratch/users/mangiola.s/cellNexus/cellxgene/19_11_2024/single_cell/", deployment = "main"),
+    tar_target(cache_directory, "/vast/scratch/users/mangiola.s/cellNexus/cellxgene/26_11_2024", deployment = "main"),
+    
     tar_target(
       metadata_parquet, 
-      "/vast/projects/cellxgene_curated/cellNexus/cell_metadata_cell_type_consensus_v1_0_3.parquet", 
+      "/vast/projects/cellxgene_curated/cellNexus/cell_metadata_cell_type_consensus_v1_0_4.parquet", 
       format = "file", 
       deployment = "main"
     ),
@@ -431,7 +427,7 @@ tar_script({
     # Get SCE SMALL
     tar_target(
       metadata_split_pseudobulk,
-      metadata_split |>  get_sce(cache.path) |> get_pseudobulk(paste0(result_directory, "/external/")),
+      metadata_split |>  get_sce(paste(cache_directory, "/single_cell/")) |> get_pseudobulk(paste0(result_directory, "/external/")),
       pattern = map(metadata_split),
       resources = tar_resources(crew = tar_resources_crew("elastic"))
     ) ,
@@ -450,12 +446,16 @@ tar_script({
 
     tar_target(
       metadata_grouped_pseudobulk_processed,
-      process_se(
-        metadata_split_pseudobulk |> pull(data) |> _[[1]], 
-        all_genes, 
-        metadata_split_pseudobulk |> pull(chunk) |> _[[1]], 
-        paste0(result_directory, "/external")
-      ),
+      {
+        if(nrow(metadata_split_pseudobulk) == 0) return(NULL)
+        
+        process_se(
+          metadata_split_pseudobulk |> pull(data) |> _[[1]], 
+          all_genes, 
+          metadata_split_pseudobulk |> pull(chunk) |> _[[1]], 
+          paste0(cache_directory, "/pseudobulk/counts/")
+        )
+      },
       pattern = map(metadata_split_pseudobulk),
       iteration = "list",
       resources = tar_resources(crew = tar_resources_crew("elastic"))
@@ -471,14 +471,36 @@ tar_script({
     ),
     tar_target(
       metadata_grouped_pseudobulk_processed_split_1_HDF5,
-      metadata_grouped_pseudobulk_processed_split_1 |> 
-        do.call(cbind, args = _) |> 
-        HDF5Array::saveHDF5SummarizedExperiment(
-          paste0(result_directory, "/external", digest::digest(metadata_grouped_pseudobulk_processed_split_1)),
-          as.sparse = TRUE,
-          replace = TRUE,
-          verbose = TRUE
-        ) ,
+      {
+        
+        se = 
+          metadata_grouped_pseudobulk_processed_split_1 |> 
+          
+          # !!!
+          # THIS SHOULD NOT BE NEEDED AND SHOULD BE RESOLVED IN TRANFORM DATA
+          # !!!
+          purrr::discard(is.null) |>
+          
+          # !!!
+          # THIS SHOULD NOT BE NEEDED AND SHOULD BE RESOLVED IN TRANFORM DATA
+          # !!!
+          map(~ { names(assays(.x))[1] = "X"; .x}) |> 
+          
+
+          # Bind
+          do.call(cbind, args = _) 
+        
+        if(length(se) == 0) return(NULL)
+        
+        se |> 
+          HDF5Array::saveHDF5SummarizedExperiment(
+            paste0(result_directory, "/external", digest::digest(metadata_grouped_pseudobulk_processed_split_1)),
+            as.sparse = TRUE,
+            replace = TRUE,
+            verbose = TRUE
+          )
+      }
+       ,
       pattern = map(metadata_grouped_pseudobulk_processed_split_1),
       iteration = "list",
       resources = tar_resources(crew = tar_resources_crew("elastic"))
@@ -487,22 +509,43 @@ tar_script({
     # SPLIT 2
     tar_target(
       metadata_grouped_pseudobulk_processed_split_2,
-      metadata_grouped_pseudobulk_processed_split_1 |> 
+      metadata_grouped_pseudobulk_processed_split_1_HDF5 |> 
         split(ceiling(seq_along(metadata_grouped_pseudobulk_processed_split_1) / 10)) ,
       iteration = "list",
       resources = tar_resources(crew = tar_resources_crew("slurm_1_80"))
     ),
     tar_target(
       metadata_grouped_pseudobulk_processed_split_2_HDF5,
-      metadata_grouped_pseudobulk_processed_split_2 |> 
-        unlist() |> # Not sure why this is needed
-        do.call(cbind, args = _) |> 
-        HDF5Array::saveHDF5SummarizedExperiment(
-          paste0(result_directory, "/external", digest::digest(metadata_grouped_pseudobulk_processed_split_2)),
-          as.sparse = TRUE,
-          replace = TRUE,
-          verbose = TRUE, 
-        ) ,
+      {
+        se = 
+          metadata_grouped_pseudobulk_processed_split_2 |> 
+          
+          # !!!
+          # THIS SHOULD NOT BE NEEDED AND SHOULD BE RESOLVED IN TRANFORM DATA
+          # !!!
+          purrr::discard(is.null) |>
+          
+          # !!!
+          # THIS SHOULD NOT BE NEEDED AND SHOULD BE RESOLVED IN TRANFORM DATA
+          # !!!
+          map(~ { names(assays(.x))[1] = "X"; .x}) |> 
+          
+          
+          
+          # Bind
+          do.call(cbind, args = _) 
+        
+        if(length(se) == 0) return(NULL)
+        
+        se |>
+          HDF5Array::saveHDF5SummarizedExperiment(
+            paste0(result_directory, "/external", digest::digest(se)),
+            as.sparse = TRUE,
+            replace = TRUE,
+            verbose = TRUE, 
+          )
+      }
+       ,
       pattern = map(metadata_grouped_pseudobulk_processed_split_2),
       iteration = "list",
       resources = tar_resources(crew = tar_resources_crew("elastic"))
@@ -511,22 +554,40 @@ tar_script({
     # SPLIT 3
     tar_target(
       metadata_grouped_pseudobulk_processed_split_3,
-      metadata_grouped_pseudobulk_processed_split_2 |> 
+      metadata_grouped_pseudobulk_processed_split_2_HDF5 |> 
         split(ceiling(seq_along(metadata_grouped_pseudobulk_processed_split_2) / 10)) ,
       iteration = "list",
       resources = tar_resources(crew = tar_resources_crew("slurm_1_80"))
     ),
     tar_target(
       metadata_grouped_pseudobulk_processed_split_3_HDF5,
-      metadata_grouped_pseudobulk_processed_split_3 |> 
-        unlist() |> # Not sure why this is needed
-        do.call(cbind, args = _) |> 
-        HDF5Array::saveHDF5SummarizedExperiment(
-          paste0(result_directory, "/external", digest::digest(metadata_grouped_pseudobulk_processed_split_3)),
-          as.sparse = TRUE,
-          replace = TRUE,
-          verbose = TRUE
-        ) ,
+      {
+        se = 
+          metadata_grouped_pseudobulk_processed_split_3 |> 
+          
+          # !!!
+          # THIS SHOULD NOT BE NEEDED AND SHOULD BE RESOLVED IN TRANFORM DATA
+          # !!!
+          purrr::discard(is.null) |>
+          
+          # !!!
+          # THIS SHOULD NOT BE NEEDED AND SHOULD BE RESOLVED IN TRANFORM DATA
+          # !!!
+          map(~ { names(assays(.x))[1] = "X"; .x}) |> 
+          
+          # Bind
+          do.call(cbind, args = _) 
+        
+        if(length(se) == 0) return(NULL)
+        
+        se |>
+          HDF5Array::saveHDF5SummarizedExperiment(
+            paste0(result_directory, "/external", digest::digest(se)),
+            as.sparse = TRUE,
+            replace = TRUE,
+            verbose = TRUE, 
+          )
+      } ,
       pattern = map(metadata_grouped_pseudobulk_processed_split_3),
       iteration = "list",
       resources = tar_resources(crew = tar_resources_crew("elastic"))
@@ -551,7 +612,8 @@ job::job({
   
 })
 
-x = tar_read(metadata_grouped_pseudobulk, store = glue("{result_directory}/_targets"), branches = 1)
+x = tar_read(metadata_grouped_pseudobulk_processed_split_3_HDF5, store = glue("{result_directory}/_targets"))
+x = tar_read(metadata_split, store = glue("{result_directory}/_targets"), branches = 1)
 
 
 tar_meta(store = glue("{result_directory}/_targets")) |> 
@@ -560,21 +622,22 @@ tar_meta(store = glue("{result_directory}/_targets")) |>
   select(name, error)
 
 tar_workspace(
-  "metadata_grouped_pseudobulk_processed_0905f77a2ad6f0ad", 
+  "metadata_grouped_pseudobulk_processed_split_2_HDF5_c6dd2f9db8a49dd1", 
   script = glue("{result_directory}/_targets.R"),
   store = glue("{result_directory}/_targets")
 )
 
+x = tar_read(metadata_grouped_pseudobulk_processed_split_1_HDF5, store = glue("{result_directory}/_targets"))
 
 c(
   # "metadata_split",
   # "metadata_split_SMALL",
   # "metadata_split_BIG"
-  "metadata_split_pseudobulk_SMALL",
-  "metadata_split_pseudobulk_BIG",
-  "metadata_grouped_pseudobulk",
-  "metadata_grouped_pseudobulk_processed",
-  "metadata_grouped_pseudobulk_processed_split_1",
+  # "metadata_split_pseudobulk_SMALL",
+  # "metadata_split_pseudobulk_BIG",
+  # "metadata_grouped_pseudobulk",
+  # "metadata_grouped_pseudobulk_processed",
+  # "metadata_grouped_pseudobulk_processed_split_1",
   "metadata_grouped_pseudobulk_processed_split_1_HDF5",
   "metadata_grouped_pseudobulk_processed_split_2",
   "metadata_grouped_pseudobulk_processed_split_2_HDF5",
@@ -589,54 +652,222 @@ tar_meta(store = glue("{result_directory}/_targets")) |>
   select(name, error) |>  
   View()
 
-library(SummarizedExperiment)
-library(tidySummarizedExperiment)
 
-sccomp_counts = readRDS("/vast/projects/mangiola_immune_map/PostDoc/immuneHealthyBodyMap/sccomp_on_cellNexus_1_0_2/cell_metadata_1_0_2_sccomp_input_counts.rds")
 
-# Save into one SE
+# # Save into one SE
+#   library(crew.cluster)
+#   controller <- crew_controller_slurm(
+#     name = "elastic",
+#     seconds_idle = 30,
+#     options_cluster = crew_options_slurm(
+#       memory_gigabytes_required = c(160), 
+#       cpus_per_task = c(40), 
+#       time_minutes = c(60*24),
+#       verbose = T
+#     )
+#   )
+#   controller$start()
+#   controller$push(name = "aggregate", command = {
+    
+    library(SummarizedExperiment)
+    library(tidySummarizedExperiment)
+    
+    result_directory = "/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_4"
+    
+    pseudobulk = 
+      targets::tar_read(metadata_grouped_pseudobulk_processed_split_3_HDF5, store = glue::glue("{result_directory}/_targets"))  |>
+      do.call(cbind, args = _) 
+    
+    
+    duplicated_samples = 
+      pseudobulk |> colnames() |>
+      _[pseudobulk |> colnames() |> duplicated()] |> 
+      unique()
+    
+    duplicated_samples_split <- split(
+      duplicated_samples,
+      cut(seq_along(duplicated_samples), breaks = 5, labels = FALSE)
+    )
+    
+
+    
+# This aggregate duplicate samples due to different split between cell type unified and consensus 
 job::job({
-  tar_read(metadata_grouped_pseudobulk_processed_split_3_HDF5, store = glue("{result_directory}/_targets"))  |>
-    map(~ .x |> inner_join(sccomp_counts)) |> 
-    do.call(cbind, args = _) |> 
+  
+  i = 5
+  
+  pseudobulk_duplicated = pseudobulk[, colnames(pseudobulk) %in% duplicated_samples_split[[i]] ]
+  
+  
+  # Parallelise
+  cores = as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK", unset = 1)) - 2
+  bp <- BiocParallel::MulticoreParam(workers = cores , progressbar = TRUE)  # Adjust the number of workers as needed
+  
+  se_duplicated = 
+    scuttle::aggregateAcrossCells(
+      pseudobulk_duplicated, 
+      colData(pseudobulk_duplicated)[,c("sample_id", "cell_type_unified_ensemble")], 
+      BPPARAM = bp, 
+      use.assay.type = c("X", "gene_presence")
+    )
+  
+  
+  se_duplicated |> assays() = se_duplicated |> assays() |> purrr::map(Matrix, sparse = TRUE) 
+  colData(se_duplicated) = colData(se_duplicated)[,-duplicated(colnames(colData(se_duplicated)))]
+  colData(se_duplicated) = colData(se_duplicated)[,! colnames(colData(se_duplicated)) %in% "ncells"]
+  colData(se_duplicated) = colData(se_duplicated)[,colnames(colData(pseudobulk))]
+  
+  se_duplicated |> 
     HDF5Array::saveHDF5SummarizedExperiment(
-      "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_joined",
+    glue::glue("/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_4/deduplicated_pseudobulk___{i}"),
+    as.sparse = TRUE,
+    replace = TRUE,
+    verbose = TRUE
+  )
+})
+    
+pseudobulk_deduplicated = 
+  glue::glue("/vast/scratch/users/mangiola.s/pseudobulk_cellNexus_1_0_4/deduplicated_pseudobulk___{1:5}") |> 
+  lapply(HDF5Array::loadHDF5SummarizedExperiment) |> 
+  do.call(cbind, args = _) |> 
+  cbind( pseudobulk[, !colnames(pseudobulk) %in% unlist(duplicated_samples_split)])
+
+colnames(pseudobulk_deduplicated) = paste0(colData(pseudobulk_deduplicated)$sample_id, "___", colData(pseudobulk_deduplicated)$cell_type_unified_ensemble)
+
+names(assays(pseudobulk_deduplicated))[1] = "counts"
+
+pseudobulk_deduplicated = 
+  pseudobulk_deduplicated |> 
+  
+  left_join(
+    readRDS("/vast/projects/mangiola_immune_map/PostDoc/immuneHealthyBodyMap/sccomp_on_cellNexus_1_0_1_regularised/cell_metadata_1_0_1_sccomp_input_counts.rds") |> 
+      mutate(do_analyse = TRUE)
+  ) 
+
+# Attach info
+pseudobulk_deduplicated |> colData() = pseudobulk_deduplicated |> colData() |> as_tibble(rownames = "rn") |> mutate(do_analyse = if_else(do_analyse |> is.na(), FALSE, do_analyse)) |> data.frame(row.names = "rn") |> DataFrame()
+pseudobulk_deduplicated |> assay("gene_presence") = pseudobulk_deduplicated |> assay("gene_presence") > 0
+system("~/bin/rclone copy box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/selected_gene_list.csv /vast/projects/mangiola_immune_map/PostDoc/immuneHealthyBodyMap/ ")
+rowData(pseudobulk_deduplicated)$is_gene_shared = rownames(pseudobulk_deduplicated) %in% readr::read_csv("/vast/projects/mangiola_immune_map/PostDoc/immuneHealthyBodyMap/selected_gene_list.csv")$Selected_genes
+
+job::job({
+  setAutoBlockSize(size=1e9)
+  
+  pseudobulk_deduplicated = 
+    pseudobulk_deduplicated |> 
+    
+    HDF5Array::saveHDF5SummarizedExperiment(
+      "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_cell_type",
       as.sparse = TRUE,
       replace = TRUE,
       verbose = TRUE
     )
 })
 
-system("~/bin/rclone copy /vast/projects/cellxgene_curated/cellNexus/pseudobulk_joined box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/")
+system("~/bin/rclone copy /vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_cell_type box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/")
+
+# Save as anndata
 
 
-se = HDF5Array::loadHDF5SummarizedExperiment("/vast/projects/cellxgene_curated/cellNexus/pseudobulk_joined")
 job::job({
   zellkonverter::writeH5AD(
     se, 
     verbose = TRUE, 
-    file = "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_cell_type_1_0_2.h5ad", 
-    X_name = "counts_scaled"
+    file = "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_cell_type_1_0_4.h5ad", 
+    X_name = "counts"
   )
 })
 
 #assays(se) = assays(se)[1] # aggregateAcrossCells does not like booleans
 
-se_sample = 
-  se |> 
-  aggregateAcrossCells(
-    colData(se)[,"sample_id"], 
-    use.assay.type = c("counts_scaled", "gene_presence"),  # Specify the correct assay name if there are multiple assays
-    BPPARAM =  MulticoreParam(workers = 10)
-  )
-se_sample |> 
-  HDF5Array::saveHDF5SummarizedExperiment(
-    "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample",
-    as.sparse = TRUE,
-    replace = TRUE,
-    verbose = TRUE
-  )
-system("~/bin/rclone copy /vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/")
+library(duckdb)
+library(duckdb)
+is_immune_tbl =
+  tbl(
+  dbConnect(duckdb::duckdb(), dbdir = ":memory:"),
+  sql("SELECT * FROM read_parquet('/vast/projects/cellxgene_curated/cellNexus/cell_metadata_cell_type_consensus_v1_0_4.parquet')")
+) |> 
+  distinct(cell_type_unified_ensemble, is_immune) |> 
+  as_tibble()
+
+pseudobulk_deduplicated |> colData() = pseudobulk_deduplicated |> colData() |> as_tibble(rownames = "rn") |> left_join(is_immune_tbl) |> data.frame(row.names = "rn") |> DataFrame()
+pseudobulk_deduplicated |> colData() = pseudobulk_deduplicated |> colData() |> as_tibble(rownames = "rn") |> mutate(is_immune = is_immune |> as.integer()) |> data.frame(row.names = "rn") |> DataFrame()
+
+job::job({
+  
+  library(SummarizedExperiment)
+  library(tidySummarizedExperiment)
+  
+  # Parallelise
+  cores = as.numeric(Sys.getenv("SLURM_CPUS_PER_TASK", unset = 1)) - 2
+  cores = 20
+  bp <- BiocParallel::MulticoreParam(workers = cores , progressbar = TRUE)  # Adjust the number of workers as needed
+  
+  
+  pseudobulk_sample = 
+    pseudobulk_deduplicated |> 
+    scuttle::aggregateAcrossCells(
+      colData(pseudobulk_deduplicated)[,c("sample_id", "is_immune")], 
+      use.assay.type = c("counts", "gene_presence"),  # Specify the correct assay name if there are multiple assays
+      BPPARAM = bp
+    )
+
+  colnames(pseudobulk_sample) = paste0(colData(pseudobulk_sample)$sample_id, "___", colData(pseudobulk_sample)$is_immune)
+  pseudobulk_sample |> colData() = pseudobulk_sample |> colData() |> as_tibble(rownames = "rn") |> mutate(do_analyse = if_else(do_analyse |> is.na(), TRUE, do_analyse)) |> data.frame(row.names = "rn") |> DataFrame()
+  
+  pseudobulk_sample |> colData() = 
+    pseudobulk_sample |> colData() |> _[, c("sample_id", "is_immune", "do_analyse")] |> as_tibble(rownames = "rn") |> 
+    left_join(
+      readRDS("/vast/projects/mangiola_immune_map/PostDoc/immuneHealthyBodyMap/sccomp_on_cellNexus_1_0_1_regularised/cell_metadata_1_0_1_sccomp_input_counts.rds") |> 
+        distinct(sample_id, donor_id, title, dataset_id, collection_id, age_days, sex, ethnicity_groups, tissue_groups, assay_groups, disease_groups, age_bin_sex_specific) 
+    ) |> 
+    data.frame(row.names = "rn") |> 
+    DataFrame() 
+  
+  setAutoBlockSize(size=1e9)
+  
+  pseudobulk_sample = 
+    pseudobulk_sample |> 
+    HDF5Array::saveHDF5SummarizedExperiment(
+      "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_is_immune",
+      as.sparse = TRUE,
+      replace = TRUE,
+      verbose = TRUE
+    )
+})
+
+
+pseudobulk_sample = HDF5Array::loadHDF5SummarizedExperiment("/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_is_immune")
+system("~/bin/rclone copy /vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_is_immune/ box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/pseudobulk_sample_is_immune/")
+
+pseudobulk_sample |> zellkonverter::writeH5AD(
+  "/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_is_immune.h5ad", 
+  verbose = TRUE, 
+  X_name = "counts",
+  compression = "gzip"
+)
+
+# THIS IS BECAUSE HDF5 IS NOT PORTABLE
+pseudobulk_sample |> assays() = pseudobulk_sample |> assays() |> map(~{
+
+  # Convert to sparse matrix while preserving rownames and colnames
+  sparse_matrix <- as(.x, "sparseMatrix")  
+  
+  # # Preserve rownames and colnames
+  # rownames(sparse_matrix) <- rownames(.x)
+  # colnames(sparse_matrix) <- colnames(.x)
+  
+  sparse_matrix
+  
+}, .progress  = TRUE)
+  
+
+pseudobulk_sample |> saveRDS("/vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_is_immune.rds")
+system("~/bin/rclone copy /vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample_is_immune.rds box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/")
+
+
+
+system("~/bin/rclone copy /vast/projects/cellxgene_curated/cellNexus/pseudobulk_sample/ box_adelaide:/Mangiola_ImmuneAtlas/taskforce_shared_folder/pseudobulk_sample/")
 
 
 tar_meta(starts_with("metadata_split_SMALL"), store = glue("{result_directory}/_targets"))
